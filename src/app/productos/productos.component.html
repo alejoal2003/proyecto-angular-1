@@ -1,0 +1,183 @@
+<div class="productos-container">
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>inventory_2</mat-icon>
+        Gestión de Productos
+      </mat-card-title>
+      <mat-card-subtitle>Administra tu catálogo de productos</mat-card-subtitle>
+    </mat-card-header>
+  </mat-card>
+
+  <!-- Mensajes de éxito y error -->
+  <div class="mensajes-container">
+    <mat-card *ngIf="mensajeExito" class="mensaje-exito">
+      <mat-icon>check_circle</mat-icon>
+      {{ mensajeExito }}
+    </mat-card>
+    <mat-card *ngIf="mensajeError" class="mensaje-error">
+      <mat-icon>error</mat-icon>
+      {{ mensajeError }}
+    </mat-card>
+  </div>
+
+  <div class="content-wrapper">
+    <!-- Formulario -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>{{ editando ? 'Editar Producto' : 'Nuevo Producto' }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="productoForm" (ngSubmit)="editando ? actualizarProducto() : agregarProducto()">
+          <div class="form-row">
+            <!-- Código del producto -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Código del Producto</mat-label>
+              <input matInput formControlName="codigo" placeholder="Ej: A001">
+              <mat-icon matPrefix>qr_code</mat-icon>
+              <mat-error *ngIf="productoForm.get('codigo')?.hasError('required')">
+                El código es obligatorio
+              </mat-error>
+              <mat-error *ngIf="productoForm.get('codigo')?.hasError('codigoInvalido')">
+                El código debe iniciar con una letra seguida de números (Ej: A001)
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Nombre del producto -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Nombre del Producto</mat-label>
+              <input matInput formControlName="nombre" placeholder="Ej: Laptop HP">
+              <mat-icon matPrefix>shopping_bag</mat-icon>
+              <mat-error *ngIf="productoForm.get('nombre')?.hasError('required')">
+                El nombre es obligatorio
+              </mat-error>
+              <mat-error *ngIf="productoForm.get('nombre')?.hasError('minlength')">
+                El nombre del producto debe tener mínimo 5 caracteres
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <!-- Costo -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Costo</mat-label>
+              <input matInput type="number" formControlName="costo" placeholder="0.00" step="0.01">
+              <mat-icon matPrefix>attach_money</mat-icon>
+              <mat-error *ngIf="productoForm.get('costo')?.hasError('required')">
+                El costo es obligatorio
+              </mat-error>
+              <mat-error *ngIf="productoForm.get('costo')?.hasError('costoInvalido')">
+                Ingrese un costo válido (mayor a cero)
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Precio -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Precio</mat-label>
+              <input matInput type="number" formControlName="precio" placeholder="0.00" step="0.01">
+              <mat-icon matPrefix>payments</mat-icon>
+              <mat-hint>Rango: 10 - 100</mat-hint>
+              <mat-error *ngIf="productoForm.get('precio')?.hasError('required')">
+                El precio es obligatorio
+              </mat-error>
+              <mat-error *ngIf="productoForm.get('precio')?.hasError('fueraDeRango')">
+                El precio está fuera de rango (10 - 100)
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Valor -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Valor</mat-label>
+              <input matInput type="number" formControlName="valor" placeholder="0.00" step="0.01">
+              <mat-icon matPrefix>calculate</mat-icon>
+              <mat-error *ngIf="productoForm.get('valor')?.hasError('required')">
+                El valor es obligatorio
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="button-row">
+            <button mat-raised-button color="primary" type="submit" [disabled]="productoForm.invalid">
+              <mat-icon>{{ editando ? 'save' : 'add' }}</mat-icon>
+              {{ editando ? 'Actualizar' : 'Agregar' }}
+            </button>
+            <button mat-raised-button type="button" (click)="cancelarEdicion()" *ngIf="editando">
+              <mat-icon>cancel</mat-icon>
+              Cancelar
+            </button>
+            <button mat-raised-button type="button" (click)="productoForm.reset()">
+              <mat-icon>refresh</mat-icon>
+              Limpiar
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Tabla de productos -->
+    <mat-card class="table-card">
+      <mat-card-header>
+        <mat-card-title>Lista de Productos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="table-container">
+          <table mat-table [dataSource]="productos" class="mat-elevation-z2">
+            <!-- Columna Código -->
+            <ng-container matColumnDef="codigo">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let producto">{{ producto.codigo }}</td>
+            </ng-container>
+
+            <!-- Columna Nombre -->
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let producto">{{ producto.nombre }}</td>
+            </ng-container>
+
+            <!-- Columna Costo -->
+            <ng-container matColumnDef="costo">
+              <th mat-header-cell *matHeaderCellDef>Costo</th>
+              <td mat-cell *matCellDef="let producto">{{ producto.costo | number:'1.2-2' }}</td>
+            </ng-container>
+
+            <!-- Columna Precio -->
+            <ng-container matColumnDef="precio">
+              <th mat-header-cell *matHeaderCellDef>Precio</th>
+              <td mat-cell *matCellDef="let producto">{{ producto.precio | number:'1.2-2' }}</td>
+            </ng-container>
+
+            <!-- Columna Valor -->
+            <ng-container matColumnDef="valor">
+              <th mat-header-cell *matHeaderCellDef>Valor</th>
+              <td mat-cell *matCellDef="let producto">{{ producto.valor | number:'1.2-2' }}</td>
+            </ng-container>
+
+            <!-- Columna Acciones -->
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef>Acciones</th>
+              <td mat-cell *matCellDef="let producto; let i = index">
+                <button mat-icon-button color="primary" (click)="editarProducto(i)" matTooltip="Editar">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="eliminarProducto(i)" matTooltip="Eliminar">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="['codigo', 'nombre', 'costo', 'precio', 'valor', 'acciones']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['codigo', 'nombre', 'costo', 'precio', 'valor', 'acciones'];"></tr>
+
+            <!-- Mensaje cuando no hay productos -->
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell" colspan="6" style="text-align: center; padding: 20px;">
+                <mat-icon style="font-size: 48px; height: 48px; width: 48px; color: #ccc;">inbox</mat-icon>
+                <p style="color: #999;">No hay productos registrados</p>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
